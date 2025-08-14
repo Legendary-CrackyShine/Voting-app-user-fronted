@@ -1,0 +1,80 @@
+name: voting_client
+description: "A new Flutter project."
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.4.0
+  flutter_styled_toast: ^2.2.1
+  go_router: ^16.0.0
+  image_picker: ^1.1.2
+  cupertino_icons: ^1.0.8
+  animated_text_kit: ^4.2.2
+  animate_do: ^4.2.0
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#hexcode"
+    theme_color: "#hexcode"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/images/logo.png"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^5.0.0
+
+flutter_launcher_name:
+  name: "Online Voting"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  fonts:
+    - family: ChelaOne
+      fonts:
+        - asset: assets/fonts/ChelaOne-Regular.ttf
+          style: italic
+    - family: Title
+      fonts:
+        - asset: assets/fonts/Domine-Bold.ttf
+        - asset: assets/fonts/Domine-Regular.ttf
+          style: italic
+    - family: English
+      fonts:
+        - asset: assets/fonts/OpenSans-Bold.ttf
+        - asset: assets/fonts/OpenSans-Regular.ttf
+    - family: Burmese
+      fonts:
+        - asset: assets/fonts/Padauk-Bold.ttf
+        - asset: assets/fonts/Padauk-Regular.ttf
+          weight: 700
+    - family: ABeeZee
+      fonts:
+        - asset: assets/fonts/ABeeZee-Italic.ttf
+        - asset: assets/fonts/ABeeZee-Regular.ttf
+    - family: Abeal
+      fonts:
+        - asset: assets/fonts/Abel-Regular.ttf
