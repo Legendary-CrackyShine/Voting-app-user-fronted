@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final GoRouter _router = GoRouter(
       // routes: [GoRoute(path: "/", builder: (context, state) => FlashPage())],
-      routes: [GoRoute(path: "/", builder: (context, state) => LoginPage())],
+      routes: [GoRoute(path: "/", builder: (context, state) => HomePage())],
     );
     return MaterialApp.router(
       routerConfig: _router,

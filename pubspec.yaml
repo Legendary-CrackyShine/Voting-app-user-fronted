@@ -18,6 +18,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   animated_text_kit: ^4.2.2
   animate_do: ^4.2.0
+  card_swiper:
+  carousel_slider: ^5.1.1
 
 flutter_launcher_icons:
   android: "launcher_icon"

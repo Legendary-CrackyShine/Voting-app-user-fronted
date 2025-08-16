@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:voting_client/utils/Consts.dart';
@@ -13,6 +15,18 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoginEnabled = false;
   bool _submitted = false;
   var codeErr = null;
+  late Timer _timer;
+  final _codeFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _codeFocusNode.dispose();
+    _emailController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -64,13 +78,6 @@ class _LoginPageState extends State<LoginPage> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      onChanged: (value) {
-                        if (_submitted) {
-                          // Force re-validation as user types
-                          _formKey.currentState!.validate();
-                        }
-                      },
-
                       autovalidateMode: _submitted
                           ? AutovalidateMode.onUserInteraction
                           : AutovalidateMode.disabled,
@@ -106,6 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: TextFormField(
                             controller: _codeController,
                             keyboardType: TextInputType.number,
+                            focusNode: _codeFocusNode,
                             onChanged: (value) {
                               // Reset error when user types
                               if (codeErr != null) {
@@ -135,9 +143,12 @@ class _LoginPageState extends State<LoginPage> {
                                     setState(() {
                                       _submitted = true;
                                     });
+
                                     if (_formKey.currentState!.validate()) {
-                                      // All inputs are valid
-                                      // TO get OTP
+                                      // sendOtpToApi(_emailController.text);
+                                      FocusScope.of(
+                                        context,
+                                      ).requestFocus(_codeFocusNode);
                                     }
                                   },
                                   borderRadius: BorderRadius.circular(10),
