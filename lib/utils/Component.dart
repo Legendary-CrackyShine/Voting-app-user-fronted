@@ -11,7 +11,10 @@ class Component {
             valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
           ),
           SizedBox(height: 15),
-          Text("Loading...", style: TextStyle(fontSize: 15)),
+          Text(
+            "Loading...",
+            style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic),
+          ),
         ],
       ),
     );

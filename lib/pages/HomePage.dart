@@ -1,8 +1,17 @@
-import 'package:card_swiper/card_swiper.dart';
+import 'dart:convert';
+
 import 'package:carousel_slider/carousel_options.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:voting_client/models/Contestant.dart';
+import 'package:voting_client/models/Level.dart';
+import 'package:voting_client/utils/ApiProvider.dart';
 import 'package:voting_client/utils/Component.dart';
+import 'package:voting_client/utils/ConnectionErrorWidget.dart';
+import 'package:voting_client/utils/Vary.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,7 +21,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0; // track which item is selected
   var colors = [
     [Colors.blue.shade700, Color(0xFFD7E1FF), Color(0xFF7C95FF)], // 1
     [Color(0xFF009985), Color(0xFF84FFFF), Color(0xFF26A69A)], // 2
@@ -31,32 +39,19 @@ class _HomePageState extends State<HomePage> {
     [Color(0xFFf99c06), Color(0xFFFFECB3), Color(0xFFFDD835)], // 15
     [Color(0xff00e6b8), Color(0xFFE0F7FA), Color(0xFF80DEEA)], // 16
   ];
-  var teams = [
-    ["JrCS-01", "E-Commerce System", "Alpha"],
-    ["JrCS-02", "Car Tickets", "Team Liquid"],
-    ["JrCS-03", "Hospital System", "Onic PH"],
-    ["JrCS-04", "Blood Donation System", "K1NGKONG"],
-    ["JrCS-05", "Social Medai", "Yangon Galacticos"],
-    ["JrCS-06", "E-Library System", "Falcon"],
-    ["JrCS-07", "AI Robot System", "Mythic Seal"],
-    ["JrCS-08", "Online Leaning System", "Shadow Coder"],
-    ["JrCS-08", "Online Leaning System", "Shadow Coder"],
-    ["JrCS-08", "Online Leaning System", "Shadow Coder"],
-    ["JrCS-08", "Online Leaning System", "Shadow Coder"],
-    ["JrCS-08", "Online Leaning System", "Shadow Coder"],
-  ];
-  var images = ["battle.jpg", "naruto.jpg", "call.jpg", "Joker.jpg"];
-  String title =
-      "ခေါင်းစဉ်သည် ဤနေရာတွင် ပေါ်မည်ဖြစ်၍ အသုံးပြုသူများအနေဖြင့် ဤနေရာကို နှိပ်ပါ။";
-  String para1 =
-      """မြန်မာစာစတင်ဖြစ်ပေါ်လာခြင်းသည် မြန်မာသည် ပျူနှင့်မွန်စာရေးနည်းကို စံတင်ပြီး (၁၂)ရာစုတွင် မြန်မာဘာသာ ပေါ်ထွန်းလာခဲ့ခြင်းဖြစ်သည်။ မြန်မာနိုင်ငံ စတင်တည်ထောင်စဉ်ကာလ အနော်ရထာမင်း၏ လက်ထက်တွင် သက္ကတဘာသာစာဖြင့် ရေးသောအုတ်ခွက်စာများ၊ ပါဠိစာများဖြင့်ရေးသော အုတ်ခွက်စာများကို အထောက်အထားပြုကာ မြန်မာ့တို့သည် မူလက ပါဠိနှင့် သက္ကတဘာသာတို့ကို ရင်းနှီးခဲ့ကြောင်း သိရသည်။ သက္ကတဘာသာသည် မဟာယာန ဗုဒ္ဓဘာသာနှင့် ဆက်နွယ်ပြီး ပါဠိဘာသာသည် ထေရဝါဒဗုဒ္ဓဘာသာနှင့် နှီးနွယ်ကြောင်းသိရသည်။""";
-  String para2 =
-      """မြန်မာတို့သည် တိုင်းခြားဘာသာဖြစ်သော ပါဠိစာကိုဗုဒ္ဓဘာသာစာပေအဖြစ် လက်ခံလာချိန်တွင် မြန်မာတိုင်းရင်းသားများ၏ စာပေဖြစ်သော ပျူစာ၊ မွန်စာတို့သည် ရှင်သန်နှင့် နေပြီးဖြစ်ကြောင်း သိရသည်။ မြန်မာစာပေါ်ပေါက်လာသော အခါတွင် မြန်မာတို့သည် မြန်မာစာနှင့်အတူ တိုင်းရင်း ပျူ၊ မွန်စာပေတို့ကိုလည်း ဆက်လက်ပြုစုလာခဲ့ကြပြီး ခရစ်နှစ်(၁၁၁၃)ခုနှစ် တွင် ရာဇကုမာရ်မင်းသား ရေးထိုးသော မြစေတီ ကျောက်စာတွင် ပျူ၊ မွန်၊ မြန်မာဘာသာ တို့ကို ပါဠိစာပေနှင့် အတူ ယှဉ်တွဲ တွေ့ရှိရသည်။ ပါဠိစာပေမှ မြန်မာစာပေသို့ အပြန်အလှန် ဘာသာပြန် အရေးအသားနှင့် ပါဠိဘာသာပြန်ရေးသည့် အရေးအသားများ ထွန်းကားလာခဲ့ပြီး (၁၁)ရာစု အနော်ရထာမင်း လက်ထက်တွင် ထေရဝါဒဗုဒ္ဓသာသနာနှင့် အတူ ပိဋိကတ်စာပေများ ပုဂံသို့ရောက်ရှိလာပြီးနောက်တွင် (၁၁) ရာစု နှောင်းပိုင်းတွင် မြန်မာစာ စတင် ပေါ်ပေါက် ထွန်းကားခဲ့ကြောင်း သမိုင်းအထောက်အထားများက ပြဆိုထားသည်။""";
-  String para3 =
-      """မြန်မာစာ ပေါ်ပေါက်လာပုံကို ပုဂံခေတ် ကျန်စစ်သားမင်း နတ်ရွာစံပြီး ခရစ်နှစ် (၁၁၁၃) ခန့်တွင် ရေးထိုးသော ရာဇကုမာရ်ကျောက်စာသည် သက္ကရာဇ် အခိုင်အမာ ပါသော အစောဆုံး မြန်မာစာ ဖြစ်ကြောင်းသိရသည်။ မြန်မာစာစတင် ဖော်ပြရာတွင် ဗုဒ္ဓစာပေများကို ကျောက်စာ၊ မှင်စာများဖြင့် ဇာတ်နိပါတ်၊ ပန်းချီ၊ ပန်းပု များနှင့် အတူ မှင်ဖြင့် ဖော်ပြကြပြီး ကျောက်စာများ ၊ မှင်စာများ စတင် ပေါ်ပေါက်လာခဲ့ရကြောင်း သိရသည်။ နောက်ပိုင်းတွင် ဗုဒ္ဓစာပေ အကြောင်းအရာများကို စကားပြေဖြင့်လည်းကောင်း ကဗျာများဖြင့်လည်းကောင်း ဖွဲ့နွဲလာကြပြီး ဗုဒ္ဓစာပေကို အခြေခံကာ မြန်မာစာပေ အရေးအဖွဲ့ အမျိုးမျိုး ပေါ်ထွန်းလာရကြောင်းသိရသည်။ ပါဠိ၊ ပျူ၊ မွန်၊ မြန်မာ ဟူသော ဘာသာစကားတို့မှ စကားလုံးများကို မွေးစား သုံးနှုန်းခြင်း၊ ဘာသာပြန်သုံးနှုန်းခြင်းတို့ဖြင့် မြန်မာစကား နှင့် စာပေ ဖွံ့ဖြိုးကြွယ်ဝ လာခဲ့ သည်ဟု ဆိုကြသည်။ ပင်းယခေတ် (၁၃၀၉ ခုနှစ် ခန့် မှ ၁၃၆၀) နှင့် အင်းဝခေတ် (၁၃၆၄ မှ ၁၄၈၆) တစ်လျောက်လုံးတွင် မြန်မာတို့သည် ဗုဒ္ဓစာပေအမွေအနှစ်များကို ပါဠိဘာသာမှ တစ်ဆင့် ဘာသာပြန်ပြုစုလာခဲ့ကြပြီး မြန်မာစာပေအနေနှင့် အရေးအသား အသုံးအနှုန်းများ ခိုင်မြဲစွာ အမြစ်တွယ် ထွန်းကားနေပြီ ဖြစ်သည်။""";
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      context.read<Apiprovider>().getAllLevel();
+      context.read<Apiprovider>().getMe();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    Apiprovider apiprovider = Provider.of<Apiprovider>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -78,23 +73,38 @@ class _HomePageState extends State<HomePage> {
         scrolledUnderElevation: 0,
       ),
 
-      body: Column(
-        children: [
-          _makeNavbar(),
-          Expanded(child: _makeCardGrid()),
-        ],
-      ),
+      body: apiprovider.connErr
+          ? (apiprovider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ConnectionErrorWidget(
+                    errorMessage:
+                        "Connection error! Please check your internet.",
+                    onRetry: () async {
+                      await apiprovider.retryAll();
+                    },
+                  ))
+          : apiprovider.isLoading
+          ? Component.showLoading()
+          : Column(
+              children: [
+                _makeNavbar(apiprovider.levels, apiprovider),
+                Expanded(
+                  child: _makeCardGrid(
+                    apiprovider.levels[apiprovider.selectedIndex].contestant,
+                    apiprovider,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
-  _makeNavbar() {
-    List<String> items = ["JrCS", "JrCT", "SrCS", "SrCT"];
-
+  _makeNavbar(List<Level> levels, apiprovider) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // calculate total width of items (approx)
         double totalWidth =
-            items.length * 100.0; // estimate item width including spacing
+            levels.length * 100.0; // estimate item width including spacing
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
@@ -106,15 +116,13 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: totalWidth < constraints.maxWidth
                   ? MainAxisAlignment.center
                   : MainAxisAlignment.start,
-              children: List.generate(items.length, (index) {
-                bool isSelected = index == _selectedIndex;
+              children: List.generate(levels.length, (index) {
+                bool isSelected = index == apiprovider.selectedIndex;
                 return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
                   child: InkWell(
                     onTap: () {
-                      setState(() {
-                        _selectedIndex = index;
-                      });
+                      apiprovider.setSelectedIndex(index);
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
@@ -130,7 +138,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: Center(
                         child: Text(
-                          items[index],
+                          levels[index].name.toString(),
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.black,
                             fontWeight: FontWeight.bold,
@@ -148,27 +156,39 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _makeCardGrid() {
-    return GridView.builder(
-      padding: EdgeInsets.all(5),
-      itemCount: 12,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        mainAxisSpacing: 5,
-        crossAxisSpacing: 5,
-        crossAxisCount: 2,
-      ),
-      itemBuilder: (context, index) => _makeTeam(
-        teams[index][0],
-        teams[index][1],
-        teams[index][2],
-        colors[index][0],
-        colors[index][1],
-        colors[index][2],
-      ),
-    );
+  _makeCardGrid(List<Contestant> cont, apiprovider) {
+    if (cont.length > 0) {
+      return GridView.builder(
+        padding: EdgeInsets.all(5),
+        itemCount: cont.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          mainAxisSpacing: 5,
+          crossAxisSpacing: 5,
+          crossAxisCount: 2,
+        ),
+        itemBuilder: (context, index) => _makeTeam(
+          cont[index],
+          colors[index][0],
+          colors[index][1],
+          colors[index][2],
+          apiprovider,
+        ),
+      );
+    } else {
+      return Center(
+        child: Text(
+          "No data",
+          style: TextStyle(
+            fontFamily: "English",
+            fontSize: 50,
+            color: Colors.red,
+          ),
+        ),
+      );
+    }
   }
 
-  _makeTeam(code, title, name, badgeColor, startColor, endColor) {
+  _makeTeam(cont, badgeColor, startColor, endColor, apiprovider) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
@@ -189,12 +209,12 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildBadge(code, badgeColor),
+                  _buildBadge(cont.code, badgeColor),
                   const SizedBox(height: 12),
 
                   // Task title
                   Text(
-                    title,
+                    cont.title,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -206,16 +226,18 @@ class _HomePageState extends State<HomePage> {
             ),
             // Note
             Text(
-              "TEAM - " + name,
+              "TEAM - " + cont.name,
               style: TextStyle(fontSize: 13, color: Colors.black54),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.how_to_vote),
+                apiprovider.votedCont.contains(cont.id)
+                    ? Icon(Icons.how_to_vote, size: 30)
+                    : SizedBox(),
                 TextButton(
                   onPressed: () {
-                    _makeModalBtnSheet();
+                    _makeModalBtnSheet(cont, apiprovider);
                   },
                   child: Text("Detail", style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
@@ -233,7 +255,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _makeModalBtnSheet() {
+  _makeModalBtnSheet(cont, apiprovider) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -270,8 +292,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          _makeSlide(images),
-                          _makeModalBody(),
+                          _makeSlide(cont.images),
+                          _makeModalBody(cont, apiprovider),
                         ],
                       ),
                     ),
@@ -293,7 +315,7 @@ class _HomePageState extends State<HomePage> {
             return Container(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset("assets/images/" + image),
+                child: Image.network(image),
               ),
             );
           },
@@ -331,7 +353,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _makeModalBody() {
+  _makeModalBody(cont, apiprovider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -344,13 +366,13 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "TEAM-Alpha",
+                    "TEAM-${cont.name}",
                     style: TextStyle(
                       fontFamily: 'ABeeZee',
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  _buildBadge("JrCS-01", Color(0xff33ff77)),
+                  _buildBadge(cont.code, Color(0xff33ff77)),
                 ],
               ),
             ],
@@ -375,7 +397,7 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.only(left: 10),
                   child: SelectableText.rich(
                     TextSpan(
-                      text: "E-Commerce System",
+                      text: cont.title,
                       style: TextStyle(
                         fontFamily: 'Title',
                         fontSize: 25,
@@ -412,12 +434,10 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SizedBox(height: 10),
-              _makeObjText(
-                "မြန်မာတို့သည် တိုင်းခြားဘာသာဖြစ်သော ပါဠိစာကိုဗုဒ္ဓဘာသာ စာပေအဖြစ် လက်ခံလာစေရန်",
-              ),
-              _makeObjText(
-                "မြန်မာနိုင်ငံ စတင်တည်ထောင်စဉ်ကာလ အနော်ရထာမင်း၏ လက်ထက်တွင် သက္ကတဘာသာစာဖြင့် ရေးသောအုတ်ခွက်စာများရေးသာစေရန်",
-              ),
+              ...cont.objective.asMap().entries.map((entry) {
+                final obj = entry.value;
+                return _makeObjText(obj);
+              }),
               SizedBox(height: 30),
             ],
           ),
@@ -441,45 +461,20 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SizedBox(height: 10),
-              _makePataText(para1),
+              _makePataText(cont.desc),
             ],
           ),
         ),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Center(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                _showVoteDialog(context);
-              },
-              icon: const Icon(
-                Icons.how_to_vote,
-                color: Colors.white,
-                size: 22,
-              ),
-              label: const Text(
-                "Vote",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.greenAccent, // button color
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                elevation: 5, // shadow effect
-              ),
-            ),
-          ),
-        ),
+        if (apiprovider.user.role == "NORMAL")
+          apiprovider.votedLvl.contains(cont.level)
+              ? SizedBox()
+              : _voteButton(context, cont, apiprovider)
+        else if (apiprovider.user.role == "BOARD_MEMBER")
+          apiprovider.votedCont.contains(cont.id)
+              ? SizedBox()
+              : _voteButton(context, cont, apiprovider, isBoard: true)
+        else
+          _voteButton(context, cont, apiprovider),
       ],
     );
   }
@@ -535,9 +530,10 @@ class _HomePageState extends State<HomePage> {
               child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
-                // handle logout logic here
-                Navigator.of(context).pop();
+              onPressed: () async {
+                var vary = new Vary();
+                await vary.delToken();
+                context.go('/login');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -556,7 +552,67 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showVoteDialog(BuildContext context) {
+  Widget _voteButton(
+    BuildContext context,
+    cont,
+    apiprovider, {
+    bool isBoard = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: ElevatedButton.icon(
+          onPressed: () async {
+            if (!isBoard) {
+              // NORMAL or SPECIAL
+              final json = jsonEncode({
+                "voterId": apiprovider.user.id,
+                "level": cont.level,
+                "contestantId": cont.id,
+              });
+              bool success = await apiprovider.vote(json);
+              if (success) {
+                await apiprovider.retryAll();
+                Component.successToast(
+                  context,
+                  "You’ve voted! Best of luck to your contestant.",
+                );
+                Navigator.of(context).pop();
+              } else {
+                Component.errorToast(
+                  context,
+                  "Something went wrong. Try again later.",
+                );
+                Navigator.of(context).pop();
+              }
+            } else {
+              // BOARD MEMBER
+              _showVoteDialog(context, cont, apiprovider);
+            }
+          },
+          icon: const Icon(Icons.how_to_vote, color: Colors.white, size: 22),
+          label: const Text(
+            "Vote",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.greenAccent,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            elevation: 5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showVoteDialog(BuildContext context, cont, apiprovider) {
     final TextEditingController _voteController = TextEditingController();
 
     showDialog(
@@ -585,6 +641,10 @@ class _HomePageState extends State<HomePage> {
               TextField(
                 controller: _voteController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter
+                      .digitsOnly, // only numbers allowed
+                ],
                 maxLength: 3,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
@@ -603,7 +663,7 @@ class _HomePageState extends State<HomePage> {
               child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 int? points = int.tryParse(_voteController.text);
                 if (points == null || points < 0 || points > 100) {
                   // show error if invalid
@@ -617,11 +677,34 @@ class _HomePageState extends State<HomePage> {
                   );
                   return;
                 }
-
-                // handle vote logic here
-                print("User voted: $points points");
-
-                Navigator.of(context).pop(); // close dialog
+                final json = jsonEncode({
+                  "voterId": apiprovider.user.id,
+                  "level": cont.level,
+                  "type": "BOARD_MEMBER",
+                  "contestantId": cont.id,
+                  "points": points,
+                });
+                bool success = await apiprovider.vote(json);
+                if (success) {
+                  await apiprovider.retryAll();
+                  Component.successToast(
+                    context,
+                    "You’ve voted! Best of luck to your contestant.",
+                  );
+                  Navigator.of(context).pop();
+                  Future.delayed(Duration(milliseconds: 100), () {
+                    Navigator.of(context).pop();
+                  });
+                } else {
+                  Component.errorToast(
+                    context,
+                    "Something went wrong. Try again later.",
+                  );
+                  Navigator.of(context).pop();
+                  Future.delayed(Duration(milliseconds: 100), () {
+                    Navigator.of(context).pop();
+                  });
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,

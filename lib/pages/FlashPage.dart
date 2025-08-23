@@ -1,6 +1,10 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:voting_client/utils/ApiProvider.dart';
+import 'package:voting_client/utils/Vary.dart';
 
 class FlashPage extends StatefulWidget {
   const FlashPage({super.key});
@@ -10,6 +14,27 @@ class FlashPage extends StatefulWidget {
 }
 
 class _FlashPageState extends State<FlashPage> {
+  _loadData() async {
+    await Future.delayed(Duration(seconds: 5));
+    var vary = new Vary();
+    var token = await vary.getToken();
+    if (token == null) {
+      context.go("/login");
+    }
+    bool isValid = await context.read<Apiprovider>().checkToken();
+    if (isValid) {
+      context.go("/home");
+    } else {
+      context.go("/login");
+    }
+  }
+
+  @override
+  void initState() {
+    _loadData();
+    super.initState();
+  }
+
   final colorizeColors = [
     Colors.purple,
     Colors.blue,
