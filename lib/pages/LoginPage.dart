@@ -188,42 +188,45 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     SizedBox(height: 50),
-                    apiprovider.isLoading
-                        ? Component.showLoading()
-                        : ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: apiprovider.isLoginEnable
-                                  ? const Color(0xff4dffb8)
-                                  : Colors.white70,
-                              disabledBackgroundColor: Colors.grey,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 40,
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: apiprovider.isLoginEnable
+                            ? const Color(0xff4dffb8)
+                            : Colors.white70,
+                        disabledBackgroundColor: Colors.grey,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 40,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () async {
+                        if (!apiprovider.isLoginEnable) {
+                          apiprovider.setCodeErr(
+                            "Verification code must be 6 digits",
+                          );
+                        } else {
+                          bool success = await apiprovider.login();
+                          if (success) {
+                            Component.successToast(context, "Login success");
+                            context.go('/home');
+                          } else {
+                            Component.errorToast(context, "Login fail!");
+                          }
+                        }
+                      },
+                      child: apiprovider.isLoading
+                          ? Text(
+                              "Loading....",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "ABeeZee",
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed: () async {
-                              if (!apiprovider.isLoginEnable) {
-                                apiprovider.setCodeErr(
-                                  "Verification code must be 6 digits",
-                                );
-                              } else {
-                                //login
-                                bool success = await apiprovider.login();
-                                if (success) {
-                                  Component.successToast(
-                                    context,
-                                    "Login success",
-                                  );
-                                  context.go('/home');
-                                } else {
-                                  Component.errorToast(context, "Login fail!");
-                                }
-                              }
-                            },
-                            child: Text(
+                            )
+                          : Text(
                               "Login",
                               style: TextStyle(
                                 fontSize: 18,
@@ -231,7 +234,7 @@ class _LoginPageState extends State<LoginPage> {
                                 fontFamily: "ABeeZee",
                               ),
                             ),
-                          ),
+                    ),
                   ],
                 ),
               ),

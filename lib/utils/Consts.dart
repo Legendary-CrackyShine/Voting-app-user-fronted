@@ -7,6 +7,5 @@ const NORMAL_COLOR = Color(0xFF515070);
 const YELLOW_COLOR = Color(0xffFDC054);
 const DARY_GREY_COLOR = Color(0xff202020);
 const TRAN_YELLO_COLOR = Color.fromRGBO(253, 184, 70, 0.7);
-// const SHOP_ID = "6864c91f27642a74797990ff";
 // const String BASE_URL = "http://localhost:3000";
-const String API_URL = "http://192.168.165.201:3000/api";
+const String API_URL = "http://192.168.63.201:3000/api";

@@ -11,6 +11,8 @@ import 'package:voting_client/models/Level.dart';
 import 'package:voting_client/utils/ApiProvider.dart';
 import 'package:voting_client/utils/Component.dart';
 import 'package:voting_client/utils/ConnectionErrorWidget.dart';
+import 'package:voting_client/utils/CountDownFAB.dart';
+import 'package:voting_client/utils/CountDownProvider.dart';
 import 'package:voting_client/utils/Vary.dart';
 
 class HomePage extends StatefulWidget {
@@ -39,19 +41,27 @@ class _HomePageState extends State<HomePage> {
     [Color(0xFFf99c06), Color(0xFFFFECB3), Color(0xFFFDD835)], // 15
     [Color(0xff00e6b8), Color(0xFFE0F7FA), Color(0xFF80DEEA)], // 16
   ];
-
+  var images = ["naruto.jpg", "battle.jpg", "call.jpg"];
   @override
   void initState() {
     super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      context.read<Apiprovider>().getAllLevel();
-      context.read<Apiprovider>().getMe();
+      await context.read<Apiprovider>().getAllLevel();
+      await context.read<Apiprovider>().getMe();
+      await context.read<CountdownProvider>().getCountDown();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     Apiprovider apiprovider = Provider.of<Apiprovider>(context);
+    CountdownProvider coutdownprovider = Provider.of<CountdownProvider>(
+      context,
+    );
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -59,6 +69,22 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(fontFamily: "Title", fontSize: 20),
         ),
         actions: [
+          (apiprovider.user.role == "BOARD_MEMBER")
+              ? IconButton(
+                  onPressed: () async {
+                    context.push("/history/${apiprovider.user.id}");
+                  },
+                  icon: Icon(Icons.task_alt_outlined, color: Colors.green),
+                )
+              : (apiprovider.user.role == "SPECIAL")
+              ? IconButton(
+                  onPressed: () async {
+                    context.push("/special");
+                  },
+                  icon: Icon(Icons.diamond_outlined, color: Colors.orange),
+                )
+              : SizedBox(),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: IconButton(
@@ -73,29 +99,34 @@ class _HomePageState extends State<HomePage> {
         scrolledUnderElevation: 0,
       ),
 
-      body: apiprovider.connErr
-          ? (apiprovider.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ConnectionErrorWidget(
-                    errorMessage:
-                        "Connection error! Please check your internet.",
-                    onRetry: () async {
-                      await apiprovider.retryAll();
-                    },
-                  ))
-          : apiprovider.isLoading
-          ? Component.showLoading()
-          : Column(
-              children: [
-                _makeNavbar(apiprovider.levels, apiprovider),
-                Expanded(
-                  child: _makeCardGrid(
-                    apiprovider.levels[apiprovider.selectedIndex].contestant,
-                    apiprovider,
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: apiprovider.connErr
+            ? (apiprovider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ConnectionErrorWidget(
+                      errorMessage:
+                          "Connection error! Please check your internet.",
+                      onRetry: () async {
+                        await apiprovider.retryAll();
+                      },
+                    ))
+            : apiprovider.isLoading
+            ? Component.showLoading()
+            : Column(
+                children: [
+                  _makeNavbar(apiprovider.levels, apiprovider),
+                  Expanded(
+                    child: _makeCardGrid(
+                      apiprovider.levels[apiprovider.selectedIndex].contestant,
+                      apiprovider,
+                      coutdownprovider,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
+      floatingActionButton: const CountdownFAB(),
     );
   }
 
@@ -156,7 +187,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _makeCardGrid(List<Contestant> cont, apiprovider) {
+  _makeCardGrid(List<Contestant> cont, apiprovider, coutdownprovider) {
     if (cont.length > 0) {
       return GridView.builder(
         padding: EdgeInsets.all(5),
@@ -172,6 +203,7 @@ class _HomePageState extends State<HomePage> {
           colors[index][1],
           colors[index][2],
           apiprovider,
+          coutdownprovider,
         ),
       );
     } else {
@@ -188,7 +220,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  _makeTeam(cont, badgeColor, startColor, endColor, apiprovider) {
+  _makeTeam(
+    cont,
+    badgeColor,
+    startColor,
+    endColor,
+    apiprovider,
+    coutdownprovider,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
@@ -209,14 +248,42 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildBadge(cont.code, badgeColor),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildBadge(cont.code, badgeColor),
+                      (cont.status == 1 || cont.status == 2)
+                          ? Row(
+                              children: [
+                                const Icon(
+                                  Icons.emoji_events_outlined,
+                                  color: Colors.yellow,
+                                ),
+                                (cont.status == 1)
+                                    ? const Text(
+                                        "1st",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : const Text(
+                                        "2nd",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ],
+                            )
+                          : const SizedBox(),
+                    ],
+                  ),
+
                   const SizedBox(height: 12),
 
-                  // Task title
                   Text(
                     cont.title,
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: const TextStyle(
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -224,27 +291,31 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            // Note
+
             Text(
               "TEAM - " + cont.name,
-              style: TextStyle(fontSize: 13, color: Colors.black54),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 apiprovider.votedCont.contains(cont.id)
-                    ? Icon(Icons.how_to_vote, size: 30)
-                    : SizedBox(),
+                    ? const Icon(Icons.how_to_vote, size: 30)
+                    : const SizedBox(),
                 TextButton(
                   onPressed: () {
-                    _makeModalBtnSheet(cont, apiprovider);
+                    _makeModalBtnSheet(cont, apiprovider, coutdownprovider);
                   },
-                  child: Text("Detail", style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: badgeColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
+                  ),
+                  child: const Text(
+                    "Detail",
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ],
@@ -255,7 +326,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _makeModalBtnSheet(cont, apiprovider) {
+  _makeModalBtnSheet(cont, apiprovider, coutdownprovider) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -292,8 +363,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          _makeSlide(cont.images),
-                          _makeModalBody(cont, apiprovider),
+                          _makeSlide(images),
+                          _makeModalBody(cont, apiprovider, coutdownprovider),
                         ],
                       ),
                     ),
@@ -315,7 +386,7 @@ class _HomePageState extends State<HomePage> {
             return Container(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(image),
+                child: Image.asset("assets/images/$image"),
               ),
             );
           },
@@ -353,7 +424,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _makeModalBody(cont, apiprovider) {
+  _makeModalBody(cont, apiprovider, coutdownprovider) {
+    final currentLevel = apiprovider.levels.firstWhere(
+      (lvl) => lvl.id == cont.level,
+    );
+    bool IsAuthLevel = currentLevel.boardIds.contains(apiprovider.user.id);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -465,16 +540,25 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-        if (apiprovider.user.role == "NORMAL")
-          apiprovider.votedLvl.contains(cont.level)
-              ? SizedBox()
-              : _voteButton(context, cont, apiprovider)
-        else if (apiprovider.user.role == "BOARD_MEMBER")
-          apiprovider.votedCont.contains(cont.id)
-              ? SizedBox()
-              : _voteButton(context, cont, apiprovider, isBoard: true)
-        else
-          _voteButton(context, cont, apiprovider),
+        if (coutdownprovider.isVisible)
+          if (apiprovider.user.role == "NORMAL")
+            apiprovider.votedLvl.contains(cont.level)
+                ? SizedBox()
+                : apiprovider.voteLoading
+                ? _makeLoadingBtn()
+                : _voteButton(context, cont, apiprovider)
+          else if (apiprovider.user.role == "BOARD_MEMBER")
+            apiprovider.votedCont.contains(cont.id)
+                ? SizedBox()
+                : (IsAuthLevel)
+                ? _voteButton(context, cont, apiprovider, isBoard: true)
+                : apiprovider.voteLoading
+                ? _makeLoadingBtn()
+                : _voteButton(context, cont, apiprovider)
+          else
+            apiprovider.voteLoading
+                ? _makeLoadingBtn()
+                : _voteButton(context, cont, apiprovider),
       ],
     );
   }
@@ -613,12 +697,25 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showVoteDialog(BuildContext context, cont, apiprovider) {
-    final TextEditingController _voteController = TextEditingController();
-
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) {
+        final Map<String, int> maxMarks = {
+          "Innovation": 10,
+          "Technology": 40,
+          "Business": 10,
+          "Benefit in Society": 14,
+          "Teamwork presentation": 13,
+          "Project UI design": 13,
+        };
+
+        final Map<String, TextEditingController> controllers = {
+          for (var key in maxMarks.keys) key: TextEditingController(),
+        };
+
+        final _formKey = GlobalKey<FormState>();
+
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -630,80 +727,102 @@ class _HomePageState extends State<HomePage> {
               Text("Cast Your Vote"),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Enter your points (0 - 100):",
-                style: TextStyle(fontSize: 16),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: maxMarks.entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            "${entry.key}",
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 3,
+                          child: TextFormField(
+                            controller: controllers[entry.key],
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              hintText: "0 - ${entry.value}",
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Required";
+                              }
+                              final intValue = int.tryParse(value);
+                              if (intValue == null) {
+                                return "Enter number";
+                              }
+                              if (intValue < 0 || intValue > entry.value) {
+                                return "Max ${entry.value}";
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _voteController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter
-                      .digitsOnly, // only numbers allowed
-                ],
-                maxLength: 3,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  hintText: "0 - 100",
-                ),
-              ),
-            ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // dismiss dialog
+                Navigator.of(context).pop();
               },
               child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               onPressed: () async {
-                int? points = int.tryParse(_voteController.text);
-                if (points == null || points < 0 || points > 100) {
-                  // show error if invalid
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        "Please enter a valid number between 0 and 100",
-                      ),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                if (!_formKey.currentState!.validate()) {
                   return;
                 }
+                int total = 0;
+                maxMarks.forEach((key, max) {
+                  total += int.parse(controllers[key]!.text);
+                });
                 final json = jsonEncode({
                   "voterId": apiprovider.user.id,
                   "level": cont.level,
                   "type": "BOARD_MEMBER",
                   "contestantId": cont.id,
-                  "points": points,
+                  "points": total,
                 });
                 bool success = await apiprovider.vote(json);
                 if (success) {
                   await apiprovider.retryAll();
                   Component.successToast(
                     context,
-                    "You’ve voted! Best of luck to your contestant.",
+                    "You’ve voted successfully! Total: $total",
                   );
                   Navigator.of(context).pop();
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    Navigator.of(context).pop();
+
+                  Future.delayed(const Duration(seconds: 1), () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
                   });
                 } else {
                   Component.errorToast(
                     context,
                     "Something went wrong. Try again later.",
                   );
-                  Navigator.of(context).pop();
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    Navigator.of(context).pop();
-                  });
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -720,6 +839,30 @@ class _HomePageState extends State<HomePage> {
           ],
         );
       },
+    );
+  }
+
+  _makeLoadingBtn() {
+    return Center(
+      child: ElevatedButton.icon(
+        onPressed: () {},
+        label: Text(
+          "Loading...",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.greenAccent,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          elevation: 5,
+        ),
+      ),
     );
   }
 }

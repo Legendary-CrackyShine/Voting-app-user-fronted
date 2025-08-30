@@ -12,4 +12,8 @@ class User {
     email = json['email'];
     role = json['role'];
   }
+
+  static User empty() {
+    return User(id: null, name: null, email: null, role: null);
+  }
 }

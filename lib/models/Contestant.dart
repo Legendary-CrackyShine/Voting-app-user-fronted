@@ -7,6 +7,7 @@ class Contestant {
   final List<String> images;
   final List<String> objective;
   final String desc;
+  final int status;
   Contestant({
     required this.id,
     required this.name,
@@ -16,6 +17,7 @@ class Contestant {
     required this.images,
     required this.objective,
     required this.desc,
+    required this.status,
   });
 
   factory Contestant.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Contestant {
       images: List<String>.from(json["images"] ?? []),
       objective: List<String>.from(json["objective"] ?? []),
       desc: json["desc"],
+      status: json["status"] ?? 0,
     );
   }
 }

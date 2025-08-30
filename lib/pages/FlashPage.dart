@@ -61,8 +61,8 @@ class _FlashPageState extends State<FlashPage> {
                     FadeIn(
                       duration: Duration(seconds: 5),
                       child: SizedBox(
-                        width: 100,
-                        height: 80,
+                        width: 200,
+                        height: 150,
                         child: Image.asset("assets/images/logo.png"),
                       ),
                     ),

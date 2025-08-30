@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voting_client/models/Level.dart';
 import 'package:voting_client/models/User.dart';
+import 'package:voting_client/models/Vote.dart';
 import 'package:voting_client/utils/Consts.dart';
 import 'package:voting_client/utils/Vary.dart';
 
@@ -20,12 +21,14 @@ class Apiprovider extends ChangeNotifier {
   String _codeErr = "";
   int _countdown = 0; // countdown timer value
   Timer? _timer;
-  late User _user;
+  late User _user = User.empty();
   List<Level> _levels = [];
   List<dynamic> _votedLvl = [];
   List<dynamic> _votedCont = [];
   List<dynamic> get votedLvl => _votedLvl;
   List<dynamic> get votedCont => _votedCont;
+  List<Vote> _votes = [];
+  List<Vote> get votes => _votes;
   int get selectedIndex => _selectedIndex;
   List<Level> get levels => _levels;
   User get user => _user;
@@ -41,6 +44,8 @@ class Apiprovider extends ChangeNotifier {
   bool _connErr = false;
   bool get connErr => _connErr;
   final vary = new Vary();
+  bool _voteLoading = false;
+  bool get voteLoading => _voteLoading;
 
   void startCountdown(int seconds) {
     _countdown = seconds;
@@ -109,7 +114,6 @@ class Apiprovider extends ChangeNotifier {
     try {
       final response = await http.get(uri, headers: headers);
       final data = jsonDecode(response.body);
-      print("voted lvl ${data["result"]}");
       if (data["con"]) {
         _votedLvl = data["result"];
         isSuccess = true;
@@ -118,6 +122,34 @@ class Apiprovider extends ChangeNotifier {
       }
     } catch (e) {
       _connErr = true;
+      notifyListeners();
+    }
+    return isSuccess;
+  }
+
+  Future<bool> showVotedHistory(id) async {
+    _isLoading = true;
+    notifyListeners();
+    bool isSuccess = false;
+    final uri = Uri.parse("$API_URL/voted/$id");
+    final headers = await vary.getHeaders();
+    try {
+      final response = await http.get(uri, headers: headers);
+      final data = jsonDecode(response.body);
+      if (data["con"]) {
+        var lisy = List.from(data["result"]);
+        _votes = lisy
+            .map<Vote>((e) => Vote.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+        isSuccess = true;
+      } else {
+        _error = data["msg"];
+      }
+    } catch (e) {
+      _connErr = true;
+      notifyListeners();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
     return isSuccess;
@@ -171,7 +203,7 @@ class Apiprovider extends ChangeNotifier {
   }
 
   Future<bool> vote(json) async {
-    _isLoading = true;
+    _voteLoading = true;
     notifyListeners();
     bool isSuccess = false;
     final uri = Uri.parse("$API_URL/vote");
@@ -186,9 +218,60 @@ class Apiprovider extends ChangeNotifier {
         _error = data["msg"];
       }
     } catch (e) {
-      _error = e.toString();
+      _connErr = true;
+      notifyListeners();
     } finally {
-      _isLoading = false;
+      _voteLoading = false;
+      notifyListeners();
+    }
+    return isSuccess;
+  }
+
+  Future<bool> specialVote(json) async {
+    _voteLoading = true;
+    notifyListeners();
+    bool isSuccess = false;
+    final uri = Uri.parse("$API_URL/voteios");
+    final headers = await vary.getHeaders();
+    try {
+      final response = await http.post(uri, body: json, headers: headers);
+      final data = jsonDecode(response.body);
+      if (data["con"]) {
+        _msg = data["msg"];
+        isSuccess = true;
+      } else {
+        _error = data["msg"];
+      }
+    } catch (e) {
+      _connErr = true;
+      notifyListeners();
+    } finally {
+      _voteLoading = false;
+      notifyListeners();
+    }
+    return isSuccess;
+  }
+
+  Future<bool> editVote(json) async {
+    _voteLoading = true;
+    notifyListeners();
+    bool isSuccess = false;
+    final uri = Uri.parse("$API_URL/vote");
+    final headers = await vary.getHeaders();
+    try {
+      final response = await http.patch(uri, body: json, headers: headers);
+      final data = jsonDecode(response.body);
+      if (data["con"]) {
+        _msg = data["msg"];
+        isSuccess = true;
+      } else {
+        _error = data["msg"];
+      }
+    } catch (e) {
+      _connErr = true;
+      notifyListeners();
+    } finally {
+      _voteLoading = false;
       notifyListeners();
     }
     return isSuccess;
@@ -215,7 +298,8 @@ class Apiprovider extends ChangeNotifier {
         _error = data["msg"];
       }
     } catch (e) {
-      _error = e.toString();
+      _connErr = true;
+      notifyListeners();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -255,8 +339,8 @@ class Apiprovider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final ok1 = await getAllLevel();
-      final ok2 = await getMe();
+      await getAllLevel();
+      await getMe();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -270,6 +354,7 @@ class Apiprovider extends ChangeNotifier {
 
   setCodeErr(String err) {
     _codeErr = err;
+    ;
     notifyListeners();
   }
 
